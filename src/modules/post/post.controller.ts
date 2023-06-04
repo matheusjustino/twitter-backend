@@ -1,6 +1,7 @@
 import {
 	Body,
 	Controller,
+	Delete,
 	Get,
 	Inject,
 	Param,
@@ -44,9 +45,17 @@ export class PostController {
 		return this.postService.createPost(user.id, body);
 	}
 
+	@Get(':id')
+	public async getPostById(@Param('id') postId: string) {
+		return this.postService.getPostById(postId);
+	}
+
 	@Get()
 	public async listPosts(@Query() query: ListPostsQueryDTO) {
-		return this.postService.listPosts(query);
+		return this.postService.listPosts({
+			...new ListPostsQueryDTO(),
+			...query,
+		});
 	}
 
 	@UseGuards(JwtGuard)
@@ -66,5 +75,14 @@ export class PostController {
 		@Param('id') postId: string,
 	) {
 		return this.postService.retweetPost(user.id, postId);
+	}
+
+	@UseGuards(JwtGuard)
+	@Delete(':id')
+	public async deletePost(
+		@CurrentUser() user: TokenLoginDataInterface,
+		@Param('id') postId: string,
+	) {
+		return this.postService.deletePost(user.id, postId);
 	}
 }

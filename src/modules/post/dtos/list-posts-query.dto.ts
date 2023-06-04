@@ -1,4 +1,5 @@
 export class ListPostsQueryDTO {
-	public limit = 10;
-	public skip = 0;
+	public filters? = {} as any;
+	public limit? = 10;
+	public skip? = 0;
 }

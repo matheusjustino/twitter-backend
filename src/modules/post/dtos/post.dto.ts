@@ -8,7 +8,8 @@ export class PostDTO {
 	public postedBy: UserDTO;
 	public likes: UserDTO[];
 	public retweetUsers: UserDTO[];
-	public retweetData: PostDTO;
+	public retweetData?: PostDTO;
+	public replyTo?: PostDTO;
 	public pinned: boolean;
 	public createdAt: Date;
 	public updatedAt: Date;

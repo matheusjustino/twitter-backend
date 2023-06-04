@@ -1,15 +1,18 @@
+import { PostDocument } from './../database/schemas/post.schema';
 import {
 	BadRequestException,
 	Inject,
 	Injectable,
 	Logger,
 } from '@nestjs/common';
+import { Types } from 'mongoose';
 
 // ENUMS
 import { DatabaseProviderEnum } from '../database/enums/database-provider.enum';
 
 // INTERFACES
 import { PostServiceInterface } from './intefaces/post-service.interface';
+import { GetPostByIdResponse } from './intefaces/get-post-by-id-response.interface';
 import { PostRepositoryInterface } from '../database/interfaces/post-repository.interface';
 import { UserRepositoryInterface } from '../database/interfaces/user-repository.interface';
 
@@ -17,7 +20,6 @@ import { UserRepositoryInterface } from '../database/interfaces/user-repository.
 import { PostDTO } from './dtos/post.dto';
 import { CreatePostDTO } from './dtos/create-post.dto';
 import { ListPostsQueryDTO } from './dtos/list-posts-query.dto';
-import { Types } from 'mongoose';
 
 @Injectable()
 export class PostService implements PostServiceInterface {
@@ -39,20 +41,34 @@ export class PostService implements PostServiceInterface {
 		);
 
 		const newPost = new this.postRepository.model({
-			...data,
-			postedBy: userId,
+			content: data.content,
+			...(data.replyTo && {
+				replyTo: new Types.ObjectId(data.replyTo),
+			}),
+			postedBy: new Types.ObjectId(userId),
 		});
 
 		await newPost.save();
-		await newPost.populate('postedBy');
+		await newPost.populate([
+			'postedBy',
+			{ path: 'replyTo' },
+			{
+				path: 'replyTo',
+				populate: {
+					path: 'postedBy',
+				},
+			},
+		]);
 		return newPost;
 	}
 
 	public async listPosts(query: ListPostsQueryDTO): Promise<PostDTO[]> {
 		this.logger.log(`List Posts - query: ${JSON.stringify(query)}`);
 
-		return this.postRepository.model
-			.find()
+		const { filters, limit, skip } = query;
+
+		return await this.postRepository.model
+			.find(filters ?? {})
 			.populate('postedBy')
 			.populate('retweetData')
 			.populate({
@@ -61,9 +77,66 @@ export class PostService implements PostServiceInterface {
 					path: 'postedBy',
 				},
 			})
-			.limit(query.limit)
-			.skip(query.skip * query.limit)
-			.sort('-createdAt');
+			.populate('replyTo')
+			.populate({
+				path: 'replyTo',
+				populate: {
+					path: 'postedBy',
+				},
+			})
+			.limit(limit ?? 10)
+			.skip(skip ? skip * (limit ?? 10) : 0)
+			.sort({ createdAt: -1 });
+	}
+
+	public async getPostById(postId: string): Promise<GetPostByIdResponse> {
+		this.logger.log(`Get Post By Id - postId: ${postId}`);
+
+		const post = await this.postRepository.model
+			.findById(new Types.ObjectId(postId))
+			.populate('postedBy')
+			.populate('replyTo')
+			.populate({
+				path: 'replyTo',
+				populate: {
+					path: 'postedBy',
+				},
+			})
+			.populate('retweetData')
+			.populate({
+				path: 'retweetData',
+				populate: {
+					path: 'postedBy',
+				},
+			});
+		if (!post) {
+			throw new BadRequestException('Post not found');
+		}
+
+		const results: GetPostByIdResponse = {
+			post,
+		};
+		if (post.replyTo) {
+			// if is replyTo, try to populate next replyTo if it exists
+			results.replyTo = await (post.replyTo as PostDocument).populate([
+				'replyTo',
+				{
+					path: 'replyTo',
+					populate: {
+						path: 'postedBy',
+					},
+				},
+			]);
+		}
+
+		const query: ListPostsQueryDTO = {
+			filters: {
+				replyTo: new Types.ObjectId(postId),
+			},
+		};
+		results.replies = await this.listPosts(query);
+
+		return results;
 	}
 
 	public async likeDislikePost(
@@ -128,8 +201,8 @@ export class PostService implements PostServiceInterface {
 		let repost = deletedPost;
 		if (!repost) {
 			repost = new this.postRepository.model({
-				postedBy: userId,
-				retweetData: postId,
+				postedBy: new Types.ObjectId(userId),
+				retweetData: new Types.ObjectId(postId),
 			});
 			await repost.save();
 		}
@@ -167,5 +240,20 @@ export class PostService implements PostServiceInterface {
 		}
 
 		return updatedPost;
+	}
+
+	public async deletePost(userId: string, postId: string): Promise<PostDTO> {
+		this.logger.log(`Retweet Post - userId: ${userId} - postId: ${postId}`);
+
+		const deletedPost = await this.postRepository.model.findOneAndDelete({
+			_id: new Types.ObjectId(postId),
+			postedBy: new Types.ObjectId(userId),
+		});
+
+		if (!deletedPost) {
+			throw new BadRequestException('Post not found');
+		}
+
+		return deletedPost;
 	}
 }

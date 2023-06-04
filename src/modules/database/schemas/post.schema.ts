@@ -23,7 +23,10 @@ export class Post extends BaseSchema implements PostDTO {
 	public retweetUsers: User[];
 
 	@Prop({ ref: Post.name, type: Types.ObjectId, nullable: true })
-	public retweetData: Post;
+	public retweetData?: Post;
+
+	@Prop({ ref: Post.name, type: Types.ObjectId, nullable: true })
+	public replyTo?: Post;
 
 	@Prop({ type: Boolean, default: false })
 	public pinned: boolean;
