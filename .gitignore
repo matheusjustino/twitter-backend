@@ -4,6 +4,7 @@
 
 # Envs
 .env
+fly.toml
 
 # Logs
 logs

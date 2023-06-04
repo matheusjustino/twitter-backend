@@ -12,7 +12,7 @@ export class AllExceptionFilter implements ExceptionFilter {
 	private readonly logger = new Logger(AllExceptionFilter.name);
 
 	public catch(exception: any, host: ArgumentsHost) {
-		this.logger.error(exception?.message, exception?.stack);
+		this.logger.error(exception);
 
 		const context = host.switchToHttp();
 		const response = context.getResponse();
