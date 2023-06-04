@@ -1,0 +1,6 @@
+export enum AuthProviderEnum {
+	AUTH_SERVICE = 'AUTH_SERVICE',
+	JWT_STRATEGY = 'JWT_STRATEGY',
+	JWT_GUARD = 'JWT_GUARD',
+	JWT_SERVICE = 'JWT_SERVICE',
+}
