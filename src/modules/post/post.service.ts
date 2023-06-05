@@ -66,9 +66,22 @@ export class PostService implements PostServiceInterface {
 		this.logger.log(`List Posts - query: ${JSON.stringify(query)}`);
 
 		const { filters, limit, skip } = query;
+		if (filters.isReply) {
+			const isReply = filters.isReply.toLowerCase() == 'true';
+			filters.replyTo = { $exists: isReply };
+			delete filters.isReply;
+		}
 
-		return await this.postRepository.model
-			.find(filters ?? {})
+		return this.postRepository.model
+			.find({
+				...filters,
+				...(filters.postedBy && {
+					postedBy: new Types.ObjectId(filters.postedBy),
+				}),
+				...(filters.retweetedBy && {
+					retweetData: new Types.ObjectId(filters.retweetedBy),
+				}),
+			})
 			.populate('postedBy')
 			.populate('retweetData')
 			.populate({

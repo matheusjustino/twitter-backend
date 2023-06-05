@@ -40,16 +40,85 @@ export class UserService implements UserServiceInterface {
 		return user;
 	}
 
-	public async getByUsername(username: string): Promise<UserDTO[]> {
+	public async getByUsername(username: string): Promise<UserDTO> {
 		this.logger.log(`Get By Username - username: ${username}`);
 
-		const users = await this.userRepository.model.find({
+		const user = await this.userRepository.model.findOne({
 			// _id: {
 			// 	$ne: userId,
 			// },
-			username: { $regex: '.*' + username + '.*' },
+			username,
 		});
 
-		return users;
+		if (!user) {
+			throw new BadRequestException('User not found');
+		}
+
+		return user;
 	}
+
+	public async followUser(
+		userId: string,
+		userToFollowId: string,
+	): Promise<UserDTO> {
+		this.logger.log(
+			`Follow User - userId: ${userId} - userToFollowId: ${userToFollowId}`,
+		);
+
+		const user = await this.userRepository.model.findById(userToFollowId);
+		if (!user) {
+			throw new BadRequestException('User not found');
+		}
+
+		const isFollowing = user.followers.filter(
+			(u) => (u as unknown as string) === userId,
+		)[0];
+
+		const dbAction = isFollowing ? '$pull' : '$addToSet';
+
+		const [updatedUser, updatedFollowingUser] = await Promise.all([
+			this.userRepository.model.findByIdAndUpdate(
+				userId,
+				{
+					[dbAction]: {
+						following: userToFollowId,
+					},
+				},
+				{
+					new: true,
+				},
+			),
+			this.userRepository.model.findByIdAndUpdate(
+				userToFollowId,
+				{
+					[dbAction]: {
+						followers: userId,
+					},
+				},
+				{
+					new: true,
+				},
+			),
+		]);
+		if (!updatedUser || !updatedFollowingUser) {
+			throw new BadRequestException(
+				'Fail while follow user. User not found',
+			);
+		}
+
+		return updatedUser;
+	}
+
+	// public async getByUsername(username: string): Promise<UserDTO[]> {
+	// 	this.logger.log(`Get By Username - username: ${username}`);
+
+	// 	const users = await this.userRepository.model.find({
+	// 		// _id: {
+	// 		// 	$ne: userId,
+	// 		// },
+	// 		username: { $regex: '.*' + username + '.*' },
+	// 	});
+
+	// 	return users;
+	// }
 }

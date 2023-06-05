@@ -3,6 +3,7 @@ import {
 	Get,
 	Inject,
 	Param,
+	Put,
 	Query,
 	UseGuards,
 } from '@nestjs/common';
@@ -48,5 +49,14 @@ export class UserController {
 		@Param('username') username: string,
 	) {
 		return this.userService.getByUsername(username);
+	}
+
+	@UseGuards(JwtGuard)
+	@Put(':id/follow')
+	public async followUser(
+		@CurrentUser() user: TokenLoginDataInterface,
+		@Param('id') userToFollowId: string,
+	) {
+		return this.userService.followUser(user.id, userToFollowId);
 	}
 }

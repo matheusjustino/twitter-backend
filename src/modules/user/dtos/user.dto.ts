@@ -7,7 +7,11 @@ export class UserDTO {
 	public username: string;
 	public email: string;
 	public password: string;
+	public profilePic: string;
+	public likes: PostDTO[];
 	public retweets: PostDTO[];
+	public following: UserDTO[];
+	public followers: UserDTO[];
 	public createdAt?: Date;
 	public updatedAt?: Date;
 }

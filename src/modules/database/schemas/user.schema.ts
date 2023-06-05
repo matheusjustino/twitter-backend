@@ -27,6 +27,12 @@ export class User extends BaseSchema implements UserDTO {
 
 	@Prop({ ref: Post.name, type: Types.ObjectId, default: [] })
 	public retweets: Post[];
+
+	@Prop({ ref: User?.name ?? 'User', type: Types.ObjectId, default: [] })
+	public following: User[];
+
+	@Prop({ ref: User?.name ?? 'User', type: Types.ObjectId, default: [] })
+	public followers: User[];
 }
 
 export type UserDocument = User & Document;
