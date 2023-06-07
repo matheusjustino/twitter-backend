@@ -6,4 +6,6 @@ export interface UserServiceInterface {
 	getById(userId: string): Promise<UserDTO>;
 	getByUsername(username: string): Promise<UserDTO>;
 	followUser(userId: string, userToFollowId: string): Promise<UserDTO>;
+	listUserFollowings(username: string): Promise<UserDTO>;
+	listUserFollowers(username: string): Promise<UserDTO>;
 }

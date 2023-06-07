@@ -38,6 +38,7 @@ export class UserController {
 	public async me(@CurrentUser() user: TokenLoginDataInterface) {
 		return this.userService.getById(user.id);
 	}
+
 	@Get(':id')
 	public async getUserById(@Param('id') id: string) {
 		return this.userService.getById(id);
@@ -49,6 +50,16 @@ export class UserController {
 		@Param('username') username: string,
 	) {
 		return this.userService.getByUsername(username);
+	}
+
+	@Get('/username/:username/following')
+	public async listUserFollowings(@Param('username') username: string) {
+		return this.userService.listUserFollowings(username);
+	}
+
+	@Get('/username/:username/followers')
+	public async listUserFollowers(@Param('username') username: string) {
+		return this.userService.listUserFollowers(username);
 	}
 
 	@UseGuards(JwtGuard)

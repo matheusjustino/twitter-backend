@@ -4,6 +4,7 @@ import {
 	Injectable,
 	Logger,
 } from '@nestjs/common';
+import { Types } from 'mongoose';
 
 // ENUMS
 import { DatabaseProviderEnum } from '@/modules/database/enums/database-provider.enum';
@@ -44,9 +45,6 @@ export class UserService implements UserServiceInterface {
 		this.logger.log(`Get By Username - username: ${username}`);
 
 		const user = await this.userRepository.model.findOne({
-			// _id: {
-			// 	$ne: userId,
-			// },
 			username,
 		});
 
@@ -81,7 +79,7 @@ export class UserService implements UserServiceInterface {
 				userId,
 				{
 					[dbAction]: {
-						following: userToFollowId,
+						following: new Types.ObjectId(userToFollowId),
 					},
 				},
 				{
@@ -92,7 +90,7 @@ export class UserService implements UserServiceInterface {
 				userToFollowId,
 				{
 					[dbAction]: {
-						followers: userId,
+						followers: new Types.ObjectId(userId),
 					},
 				},
 				{
@@ -107,6 +105,38 @@ export class UserService implements UserServiceInterface {
 		}
 
 		return updatedUser;
+	}
+
+	public async listUserFollowings(username: string): Promise<UserDTO> {
+		this.logger.log(`List User Followings - username: ${username}`);
+
+		const user = await this.userRepository.model
+			.find({
+				username,
+			})
+			.populate({ path: 'following', justOne: false });
+
+		if (!user?.length) {
+			throw new BadRequestException('User not found');
+		}
+
+		return user[0];
+	}
+
+	public async listUserFollowers(username: string): Promise<UserDTO> {
+		this.logger.log(`List User Followings - username: ${username}`);
+
+		const user = await this.userRepository.model
+			.find({
+				username,
+			})
+			.populate({ path: 'followers', justOne: false });
+
+		if (!user?.length) {
+			throw new BadRequestException('User not found');
+		}
+
+		return user[0];
 	}
 
 	// public async getByUsername(username: string): Promise<UserDTO[]> {

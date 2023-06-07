@@ -65,6 +65,10 @@ export class PostService implements PostServiceInterface {
 	public async listPosts(query: ListPostsQueryDTO): Promise<PostDTO[]> {
 		this.logger.log(`List Posts - query: ${JSON.stringify(query)}`);
 
+		if (query.filters.userId) {
+			return this.listFollowingPosts(query);
+		}
+
 		const { filters, limit, skip } = query;
 		if (filters.isReply) {
 			const isReply = filters.isReply.toLowerCase() == 'true';
@@ -202,15 +206,12 @@ export class PostService implements PostServiceInterface {
 	}
 
 	public async retweetPost(userId: string, postId: string): Promise<PostDTO> {
-		this.logger.log(`Retweet Post - userId: ${userId} - postId: ${postId}`);
-
 		const deletedPost = await this.postRepository.model.findOneAndDelete({
 			postedBy: new Types.ObjectId(userId),
 			retweetData: new Types.ObjectId(postId),
 		});
 
 		const dbAction = !!deletedPost ? '$pull' : '$addToSet';
-
 		let repost = deletedPost;
 		if (!repost) {
 			repost = new this.postRepository.model({
@@ -245,6 +246,16 @@ export class PostService implements PostServiceInterface {
 				},
 			},
 			{
+				populate: [
+					{
+						path: 'postedBy',
+						justOne: true,
+					},
+					{
+						path: 'retweetData',
+						justOne: true,
+					},
+				],
 				new: true,
 			},
 		);
@@ -268,5 +279,110 @@ export class PostService implements PostServiceInterface {
 		}
 
 		return deletedPost;
+	}
+
+	private async listFollowingPosts(
+		query: ListPostsQueryDTO,
+	): Promise<PostDTO[]> {
+		this.logger.log(
+			`List Following Posts - query: ${JSON.stringify(query)}`,
+		);
+
+		const { filters, limit, skip } = query;
+		const pipeline: any = [
+			{
+				$lookup: {
+					from: 'users',
+					localField: 'postedBy',
+					foreignField: '_id',
+					as: 'postedBy',
+				},
+			},
+			{
+				$unwind: {
+					path: '$postedBy',
+					preserveNullAndEmptyArrays: true,
+				},
+			},
+			{
+				$lookup: {
+					from: 'users',
+					localField: 'replyTo.postedBy',
+					foreignField: '_id',
+					as: 'replyTo.postedBy',
+				},
+			},
+			{
+				$unwind: {
+					path: '$replyTo.postedBy',
+					preserveNullAndEmptyArrays: true,
+				},
+			},
+			{
+				$match: {
+					'postedBy.followers': {
+						$in: [new Types.ObjectId(filters.userId)],
+					},
+				},
+			},
+			{
+				$lookup: {
+					from: 'posts',
+					localField: 'retweetData',
+					foreignField: '_id',
+					as: 'retweetData',
+				},
+			},
+			{
+				$unwind: {
+					path: '$retweetData',
+					includeArrayIndex: 'string',
+					preserveNullAndEmptyArrays: true,
+				},
+			},
+			{
+				$lookup: {
+					from: 'users',
+					localField: 'retweetData.postedBy',
+					foreignField: '_id',
+					as: 'retweetData.postedBy',
+				},
+			},
+			{
+				$unwind: {
+					path: '$retweetData.postedBy',
+					includeArrayIndex: 'string',
+					preserveNullAndEmptyArrays: true,
+				},
+			},
+			{
+				$lookup: {
+					from: 'posts',
+					localField: 'replyTo',
+					foreignField: '_id',
+					as: 'replyTo',
+				},
+			},
+			{
+				$unwind: {
+					path: '$replyTo',
+					includeArrayIndex: 'string',
+					preserveNullAndEmptyArrays: true,
+				},
+			},
+			{ $sort: { createdAt: -1 } },
+		];
+
+		if (skip) {
+			pipeline.push({ $skip: skip * (limit ?? 10) });
+		}
+
+		if (limit) {
+			pipeline.push({ $limit: limit });
+		}
+
+		return this.postRepository.model
+			.aggregate<PostDTO>(pipeline.flat())
+			.exec();
 	}
 }
