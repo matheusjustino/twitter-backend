@@ -69,7 +69,7 @@ export class UserService implements UserServiceInterface {
 		}
 
 		const isFollowing = user.followers.filter(
-			(u) => (u as unknown as string) === userId,
+			(u) => (u as unknown as Types.ObjectId).toString() === userId,
 		)[0];
 
 		const dbAction = isFollowing ? '$pull' : '$addToSet';

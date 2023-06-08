@@ -69,6 +69,16 @@ export class PostController {
 	}
 
 	@UseGuards(JwtGuard)
+	@Put(':id/pin')
+	public async pinPost(
+		@CurrentUser() user: TokenLoginDataInterface,
+		@Param('id') postId: string,
+		@Body() body: { pinned: boolean },
+	) {
+		return this.postService.pinPost(user.id, postId, body.pinned);
+	}
+
+	@UseGuards(JwtGuard)
 	@Post(':id/retweet')
 	public async retweetPost(
 		@CurrentUser() user: TokenLoginDataInterface,

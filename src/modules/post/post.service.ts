@@ -70,6 +70,8 @@ export class PostService implements PostServiceInterface {
 		}
 
 		const { filters, limit, skip } = query;
+		const pinned = filters.pinned;
+		delete filters.pinned;
 		if (filters.isReply) {
 			const isReply = filters.isReply.toLowerCase() == 'true';
 			filters.replyTo = { $exists: isReply };
@@ -103,7 +105,10 @@ export class PostService implements PostServiceInterface {
 			})
 			.limit(limit ?? 10)
 			.skip(skip ? skip * (limit ?? 10) : 0)
-			.sort({ createdAt: -1 });
+			.sort({
+				...(pinned && { pinned: -1 }),
+				createdAt: -1,
+			});
 	}
 
 	public async getPostById(postId: string): Promise<GetPostByIdResponse> {
@@ -156,6 +161,57 @@ export class PostService implements PostServiceInterface {
 		return results;
 	}
 
+	public async pinPost(
+		userId: string,
+		postId: string,
+		pinned: boolean,
+	): Promise<PostDTO> {
+		this.logger.log(
+			`Pin Post - userId: ${userId} - postId: ${postId} - pinned: ${pinned}`,
+		);
+
+		if (pinned) {
+			const alreadyPinned = await this.postRepository.model.findOne({
+				postedBy: new Types.ObjectId(userId),
+				pinned: true,
+			});
+
+			if (alreadyPinned) {
+				await this.postRepository.model.updateOne(
+					{
+						_id: alreadyPinned.id,
+					},
+					{
+						$set: {
+							pinned: false,
+						},
+					},
+				);
+			}
+		}
+
+		const updatedPost = await this.postRepository.model.findOneAndUpdate(
+			{
+				_id: new Types.ObjectId(postId),
+				postedBy: new Types.ObjectId(userId),
+			},
+			{
+				$set: {
+					pinned,
+				},
+			},
+			{
+				new: true,
+			},
+		);
+
+		if (!updatedPost) {
+			throw new BadRequestException('Post not found');
+		}
+
+		return updatedPost;
+	}
+
 	public async likeDislikePost(
 		userId: string,
 		postId: string,
@@ -185,19 +241,33 @@ export class PostService implements PostServiceInterface {
 			throw new BadRequestException('User not found');
 		}
 
-		const updatedPost = await this.postRepository.model.findOneAndUpdate(
-			{
-				_id: new Types.ObjectId(postId),
-			},
-			{
-				[dbAction]: {
-					likes: new Types.ObjectId(userId),
+		const updatedPost = await this.postRepository.model
+			.findOneAndUpdate(
+				{
+					_id: new Types.ObjectId(postId),
 				},
-			},
-			{
-				new: true,
-			},
-		);
+				{
+					[dbAction]: {
+						likes: new Types.ObjectId(userId),
+					},
+				},
+				{
+					new: true,
+					populate: ['postedBy', 'replyTo', 'retweetData'],
+				},
+			)
+			.populate({
+				path: 'replyTo',
+				populate: {
+					path: 'postedBy',
+				},
+			})
+			.populate({
+				path: 'retweetData',
+				populate: {
+					path: 'postedBy',
+				},
+			});
 		if (!updatedPost) {
 			throw new BadRequestException('Post not found');
 		}

@@ -15,6 +15,7 @@ export interface PostServiceInterface {
 		postId: string,
 		isLiked: boolean,
 	): Promise<PostDTO>;
+	pinPost(userId: string, postId: string, pinned: boolean): Promise<PostDTO>;
 	retweetPost(userId: string, postId: string): Promise<PostDTO>;
 	deletePost(userId: string, postId: string): Promise<PostDTO>;
 }
