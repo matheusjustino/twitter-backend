@@ -72,10 +72,16 @@ export class PostService implements PostServiceInterface {
 		const { filters, limit, skip } = query;
 		const pinned = filters.pinned;
 		delete filters.pinned;
+
 		if (filters.isReply) {
 			const isReply = filters.isReply.toLowerCase() == 'true';
 			filters.replyTo = { $exists: isReply };
 			delete filters.isReply;
+		}
+		if (filters.content) {
+			filters.content = {
+				$regex: '.*' + filters.content + '.*',
+			};
 		}
 
 		return this.postRepository.model

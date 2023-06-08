@@ -28,6 +28,17 @@ export class UserService implements UserServiceInterface {
 	public async listUsers(query): Promise<UserDTO[]> {
 		this.logger.log(`List Users - query: ${JSON.stringify(query)}`);
 
+		if (query.userSearching) {
+			query['_id'] = {
+				$ne: query.userSearching,
+			};
+			delete query.userSearching;
+		}
+
+		query['username'] = {
+			$regex: '.*' + query.username + '.*',
+		};
+
 		return this.userRepository.model.find(query).populate('retweets');
 	}
 
