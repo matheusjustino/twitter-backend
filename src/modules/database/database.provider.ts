@@ -8,6 +8,7 @@ import { UserRepository } from './repositories/user.repository';
 import { ChatRepository } from './repositories/chat.repository';
 import { MessageRepository } from './repositories/message.repository';
 import { PostRepository } from './repositories/post.repository';
+import { NotificationRepository } from './repositories/notification.repository';
 
 export const DatabaseProvider: Provider[] = [
 	{
@@ -25,5 +26,9 @@ export const DatabaseProvider: Provider[] = [
 	{
 		provide: DatabaseProviderEnum.POST_REPOSITORY,
 		useClass: PostRepository,
+	},
+	{
+		provide: DatabaseProviderEnum.NOTIFICATION_REPOSITORY,
+		useClass: NotificationRepository,
 	},
 ];

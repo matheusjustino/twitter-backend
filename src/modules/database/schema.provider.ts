@@ -6,6 +6,10 @@ import { User, UserSchema, UserDocument } from './schemas/user.schema';
 import { Chat, ChatSchema } from './schemas/chat.schema';
 import { Message, MessageSchema } from './schemas/message.schema';
 import { Post, PostSchema } from './schemas/post.schema';
+import {
+	Notification,
+	NotificationSchema,
+} from './schemas/notification.schema';
 
 export const SchemaProvider: AsyncModelFactory[] = [
 	{
@@ -39,5 +43,10 @@ export const SchemaProvider: AsyncModelFactory[] = [
 		name: Post.name,
 		collection: 'posts',
 		useFactory: () => PostSchema,
+	},
+	{
+		name: Notification.name,
+		collection: 'notification',
+		useFactory: () => NotificationSchema,
 	},
 ];

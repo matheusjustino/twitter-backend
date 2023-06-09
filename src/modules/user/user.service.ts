@@ -10,8 +10,9 @@ import { Types } from 'mongoose';
 import { DatabaseProviderEnum } from '@/modules/database/enums/database-provider.enum';
 
 // INTERFACES
-import { UserRepositoryInterface } from '@/modules/database/interfaces/user-repository.interface';
 import { UserServiceInterface } from './interfaces/user-service.interface';
+import { UserRepositoryInterface } from '@/modules/database/interfaces/user-repository.interface';
+import { NotificationRepositoryInterface } from '@/modules/database/interfaces/notification-repository.interface';
 
 // DTOS
 import { UserDTO } from './dtos/user.dto';
@@ -23,6 +24,8 @@ export class UserService implements UserServiceInterface {
 	constructor(
 		@Inject(DatabaseProviderEnum.USER_REPOSITORY)
 		private readonly userRepository: UserRepositoryInterface,
+		@Inject(DatabaseProviderEnum.NOTIFICATION_REPOSITORY)
+		private readonly notificationRepository: NotificationRepositoryInterface,
 	) {}
 
 	public async listUsers(query): Promise<UserDTO[]> {
@@ -114,6 +117,20 @@ export class UserService implements UserServiceInterface {
 				'Fail while follow user. User not found',
 			);
 		}
+
+		await this.notificationRepository.model.deleteOne({
+			userTo: userToFollowId,
+			userFrom: userId,
+			notificationType: 'follow',
+			entityId: userId,
+		});
+		const notification = new this.notificationRepository.model({
+			userTo: userToFollowId,
+			userFrom: userId,
+			notificationType: 'follow',
+			entityId: userId,
+		});
+		await notification.save();
 
 		return updatedUser;
 	}

@@ -25,3 +25,24 @@ export class Notification extends BaseSchema {
 
 export type NotificationDocument = Notification & Document;
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
+
+// NotificationSchema.static(
+// 	'insertNotification',
+// 	async function (
+// 		userTo: Types.ObjectId,
+// 		userFrom: Types.ObjectId,
+// 		notificationType: string,
+// 		entityId: Types.ObjectId,
+// 	) {
+// 		const data = {
+// 			userTo,
+// 			userFrom,
+// 			notificationType,
+// 			entityId,
+// 		};
+
+// 		await this.deleteOne(data);
+
+// 		return this.create(data);
+// 	},
+// );
