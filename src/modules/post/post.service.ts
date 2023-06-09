@@ -109,8 +109,8 @@ export class PostService implements PostServiceInterface {
 					path: 'postedBy',
 				},
 			})
-			.limit(limit ?? 10)
-			.skip(skip ? skip * (limit ?? 10) : 0)
+			.limit(Number(limit ?? 10))
+			.skip(Number(skip ?? 0))
 			.sort({
 				...(pinned && { pinned: -1 }),
 				createdAt: -1,
@@ -450,11 +450,11 @@ export class PostService implements PostServiceInterface {
 		];
 
 		if (skip) {
-			pipeline.push({ $skip: skip * (limit ?? 10) });
+			pipeline.push({ $skip: Number(skip ?? 0) });
 		}
 
 		if (limit) {
-			pipeline.push({ $limit: limit });
+			pipeline.push({ $limit: Number(limit ?? 10) });
 		}
 
 		return this.postRepository.model
