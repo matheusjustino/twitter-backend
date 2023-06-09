@@ -8,11 +8,13 @@ import { Types } from 'mongoose';
 
 // ENUMS
 import { DatabaseProviderEnum } from '@/modules/database/enums/database-provider.enum';
+import { NotificationTypeEnum } from '@/common/enums/notification.enum';
+import { NotificationProviderEnum } from '@/modules/notification/enums/notification-provider.enum';
 
 // INTERFACES
 import { UserServiceInterface } from './interfaces/user-service.interface';
 import { UserRepositoryInterface } from '@/modules/database/interfaces/user-repository.interface';
-import { NotificationRepositoryInterface } from '@/modules/database/interfaces/notification-repository.interface';
+import { NotificationServiceInterface } from '@/modules/notification/interfaces/notification-service.interface';
 
 // DTOS
 import { UserDTO } from './dtos/user.dto';
@@ -24,8 +26,8 @@ export class UserService implements UserServiceInterface {
 	constructor(
 		@Inject(DatabaseProviderEnum.USER_REPOSITORY)
 		private readonly userRepository: UserRepositoryInterface,
-		@Inject(DatabaseProviderEnum.NOTIFICATION_REPOSITORY)
-		private readonly notificationRepository: NotificationRepositoryInterface,
+		@Inject(NotificationProviderEnum.NOTIFICATION_SERVICE)
+		private readonly notificationService: NotificationServiceInterface,
 	) {}
 
 	public async listUsers(query): Promise<UserDTO[]> {
@@ -118,19 +120,14 @@ export class UserService implements UserServiceInterface {
 			);
 		}
 
-		await this.notificationRepository.model.deleteOne({
-			userTo: userToFollowId,
-			userFrom: userId,
-			notificationType: 'follow',
-			entityId: userId,
-		});
-		const notification = new this.notificationRepository.model({
-			userTo: userToFollowId,
-			userFrom: userId,
-			notificationType: 'follow',
-			entityId: userId,
-		});
-		await notification.save();
+		if (!isFollowing) {
+			this.notificationService.createNotification({
+				userTo: new Types.ObjectId(userToFollowId),
+				userFrom: new Types.ObjectId(userId),
+				notificationType: NotificationTypeEnum.FOLLOW,
+				entityId: new Types.ObjectId(userId),
+			});
+		}
 
 		return updatedUser;
 	}

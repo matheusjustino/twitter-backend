@@ -8,18 +8,21 @@ import {
 import { Types } from 'mongoose';
 
 // ENUMS
-import { DatabaseProviderEnum } from '../database/enums/database-provider.enum';
+import { DatabaseProviderEnum } from '@/modules/database/enums/database-provider.enum';
+import { NotificationProviderEnum } from '@/modules/notification/enums/notification-provider.enum';
 
 // INTERFACES
 import { PostServiceInterface } from './intefaces/post-service.interface';
 import { GetPostByIdResponse } from './intefaces/get-post-by-id-response.interface';
-import { PostRepositoryInterface } from '../database/interfaces/post-repository.interface';
-import { UserRepositoryInterface } from '../database/interfaces/user-repository.interface';
+import { PostRepositoryInterface } from '@/modules/database/interfaces/post-repository.interface';
+import { UserRepositoryInterface } from '@/modules/database/interfaces/user-repository.interface';
+import { NotificationServiceInterface } from '@/modules/notification/interfaces/notification-service.interface';
 
 // DTOS
 import { PostDTO } from './dtos/post.dto';
 import { CreatePostDTO } from './dtos/create-post.dto';
 import { ListPostsQueryDTO } from './dtos/list-posts-query.dto';
+import { NotificationTypeEnum } from '@/common/enums/notification.enum';
 
 @Injectable()
 export class PostService implements PostServiceInterface {
@@ -30,6 +33,8 @@ export class PostService implements PostServiceInterface {
 		private readonly postRepository: PostRepositoryInterface,
 		@Inject(DatabaseProviderEnum.USER_REPOSITORY)
 		private readonly userRepository: UserRepositoryInterface,
+		@Inject(NotificationProviderEnum.NOTIFICATION_SERVICE)
+		private readonly notificationService: NotificationServiceInterface,
 	) {}
 
 	public async createPost(
@@ -59,6 +64,16 @@ export class PostService implements PostServiceInterface {
 				},
 			},
 		]);
+
+		if (data.replyTo) {
+			this.notificationService.createNotification({
+				userTo: new Types.ObjectId(newPost.postedBy.id),
+				userFrom: new Types.ObjectId(userId),
+				notificationType: NotificationTypeEnum.REPLY,
+				entityId: new Types.ObjectId(newPost.id),
+			});
+		}
+
 		return newPost;
 	}
 
@@ -278,6 +293,15 @@ export class PostService implements PostServiceInterface {
 			throw new BadRequestException('Post not found');
 		}
 
+		if (!isLiked) {
+			this.notificationService.createNotification({
+				userTo: new Types.ObjectId(updatedPost.postedBy.id),
+				userFrom: new Types.ObjectId(userId),
+				notificationType: NotificationTypeEnum.LIKE,
+				entityId: new Types.ObjectId(updatedPost.id),
+			});
+		}
+
 		return updatedPost;
 	}
 
@@ -337,6 +361,15 @@ export class PostService implements PostServiceInterface {
 		);
 		if (!updatedPost) {
 			throw new BadRequestException('Post not found');
+		}
+
+		if (!deletedPost) {
+			this.notificationService.createNotification({
+				userTo: new Types.ObjectId(updatedPost.postedBy.id),
+				userFrom: new Types.ObjectId(userId),
+				notificationType: NotificationTypeEnum.RETWEET,
+				entityId: updatedPost.id,
+			});
 		}
 
 		return updatedPost;

@@ -46,7 +46,7 @@ export const SchemaProvider: AsyncModelFactory[] = [
 	},
 	{
 		name: Notification.name,
-		collection: 'notification',
+		collection: 'notifications',
 		useFactory: () => NotificationSchema,
 	},
 ];

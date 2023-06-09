@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 
+// ENUMS
+import { NotificationTypeEnum } from '@/common/enums/notification.enum';
+
 // SCHEMAS
 import { BaseSchema } from './base.schema';
 import { User } from './user.schema';
@@ -13,8 +16,8 @@ export class Notification extends BaseSchema {
 	@Prop({ ref: User?.name ?? 'User', type: Types.ObjectId })
 	public userFrom: User;
 
-	@Prop({ type: String, trim: true })
-	public notificationType: string;
+	@Prop({ type: String, enum: NotificationTypeEnum, trim: true })
+	public notificationType: NotificationTypeEnum;
 
 	@Prop({ type: Boolean, default: false })
 	public opened: boolean;
@@ -25,24 +28,3 @@ export class Notification extends BaseSchema {
 
 export type NotificationDocument = Notification & Document;
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
-
-// NotificationSchema.static(
-// 	'insertNotification',
-// 	async function (
-// 		userTo: Types.ObjectId,
-// 		userFrom: Types.ObjectId,
-// 		notificationType: string,
-// 		entityId: Types.ObjectId,
-// 	) {
-// 		const data = {
-// 			userTo,
-// 			userFrom,
-// 			notificationType,
-// 			entityId,
-// 		};
-
-// 		await this.deleteOne(data);
-
-// 		return this.create(data);
-// 	},
-// );

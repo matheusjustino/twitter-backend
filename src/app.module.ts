@@ -12,6 +12,7 @@ import { SocketIoModule } from './modules/socket-io/socket-io.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { PostModule } from './modules/post/post.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
 	imports: [
@@ -21,6 +22,7 @@ import { PostModule } from './modules/post/post.module';
 		AuthModule,
 		UserModule,
 		PostModule,
+		NotificationModule,
 	],
 	controllers: [AppController],
 })
