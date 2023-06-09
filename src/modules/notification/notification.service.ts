@@ -1,4 +1,9 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+	BadRequestException,
+	Inject,
+	Injectable,
+	Logger,
+} from '@nestjs/common';
 import { Types } from 'mongoose';
 
 // ENUMS
@@ -7,11 +12,12 @@ import { NotificationTypeEnum } from '@/common/enums/notification.enum';
 
 // INTERFACES
 import { NotificationServiceInterface } from './interfaces/notification-service.interface';
-import { NotificationRepositoryInterface } from '../database/interfaces/Notification-repository.interface';
+import { NotificationRepositoryInterface } from '../database/interfaces/notification-repository.interface';
 
 // DTOS
 import { CreateNotificationDTO } from './dtos/create-notification.dto';
 import { NotificationDTO } from './dtos/notification.dto';
+import { FindNotificationQueryDTO } from './dtos/find-notifications-query.dto';
 
 @Injectable()
 export class NotificationService implements NotificationServiceInterface {
@@ -32,16 +38,76 @@ export class NotificationService implements NotificationServiceInterface {
 		await notification.save();
 	}
 
-	public async getNotifications(userTo: string): Promise<NotificationDTO[]> {
+	public async getNotifications(
+		userTo: string,
+		query: FindNotificationQueryDTO,
+	): Promise<NotificationDTO[]> {
+		this.logger.log(`Get Notifications - userTo: ${userTo}`);
+
+		const { limit, skip, filters } = query;
+
 		return this.notificationRepository.model
 			.find({
+				...filters,
 				userTo: new Types.ObjectId(userTo),
 				notificationType: {
 					$ne: NotificationTypeEnum.MESSAGE,
 				},
 			})
+			.limit(limit)
+			.skip(skip)
 			.populate('userFrom')
-			.populate('entityId')
 			.sort({ createdAt: -1 });
+	}
+
+	public async openNotifications(
+		userId: string,
+		notificationId: string,
+	): Promise<NotificationDTO> {
+		this.logger.log(
+			`Open Notification - userId: ${userId} notificationId: ${notificationId}`,
+		);
+
+		const updatedNotification =
+			await this.notificationRepository.model.findOneAndUpdate(
+				{
+					_id: new Types.ObjectId(notificationId),
+					userTo: new Types.ObjectId(userId),
+				},
+				{
+					$set: {
+						opened: true,
+					},
+				},
+				{
+					populate: ['userFrom'],
+					new: true,
+				},
+			);
+
+		if (!updatedNotification) {
+			throw new BadRequestException('Notification not found');
+		}
+
+		return updatedNotification;
+	}
+
+	public async openManyNotifications(userId: string): Promise<void> {
+		this.logger.log(`Open Many Notifications - userId: ${userId}`);
+
+		await this.notificationRepository.model.updateMany(
+			{
+				userTo: new Types.ObjectId(userId),
+				opened: false,
+			},
+			{
+				$set: {
+					opened: true,
+				},
+			},
+			{
+				new: true,
+			},
+		);
 	}
 }

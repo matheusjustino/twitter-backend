@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
 // INTERFACES
-import { NotificationRepositoryInterface } from '../interfaces/Notification-repository.interface';
+import { NotificationRepositoryInterface } from '../interfaces/notification-repository.interface';
 
 // SCHEMAS
 import {
