@@ -60,6 +60,26 @@ export class NotificationService implements NotificationServiceInterface {
 			.sort({ createdAt: -1 });
 	}
 
+	public async getLatestNotification(
+		userId: string,
+	): Promise<NotificationDTO> {
+		this.logger.log(`Get Latest Notification - userId: ${userId}`);
+
+		const notification = await this.notificationRepository.model
+			.findOne({
+				userTo: new Types.ObjectId(userId),
+				opened: false,
+			})
+			.populate('userFrom')
+			.sort({ createdAt: -1 });
+
+		if (!notification) {
+			throw new BadRequestException('Notification not found');
+		}
+
+		return notification;
+	}
+
 	public async openNotifications(
 		userId: string,
 		notificationId: string,

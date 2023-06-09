@@ -95,6 +95,10 @@ export class SocketGateway {
 				client.to(participants).emit('new chat received', newChat);
 			},
 		);
+
+		client.on('notification received', (room) =>
+			client.in(room).emit('notification received'),
+		);
 	}
 
 	public handleDisconnect(client: Socket): void {

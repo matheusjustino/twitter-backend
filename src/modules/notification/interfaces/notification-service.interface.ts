@@ -9,6 +9,7 @@ export interface NotificationServiceInterface {
 		userTo: string,
 		query: FindNotificationQueryDTO,
 	): Promise<NotificationDTO[]>;
+	getLatestNotification(userId: string): Promise<NotificationDTO>;
 	openNotifications(
 		userId: string,
 		notificationId: string,

@@ -43,6 +43,13 @@ export class NotificationController {
 		});
 	}
 
+	@Get('latest')
+	public async getLatestNotification(
+		@CurrentUser() user: TokenLoginDataInterface,
+	) {
+		return this.notificationService.getLatestNotification(user.id);
+	}
+
 	@Put(':id/open')
 	public async openNotification(
 		@CurrentUser() user: TokenLoginDataInterface,
