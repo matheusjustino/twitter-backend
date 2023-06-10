@@ -19,6 +19,7 @@ import { ChatServiceInterface } from './interfaces/chat-service.interface';
 import { ChatDTO } from './dtos/chat.dto';
 import { CreateChatDTO } from './dtos/create-chat.dto';
 import { MessageDTO } from '../message/dtos/message.dto';
+import { FindChatsQueryDTO } from './dtos/find-chats-query.dto';
 
 @Injectable()
 export class ChatService implements ChatServiceInterface {
@@ -48,11 +49,19 @@ export class ChatService implements ChatServiceInterface {
 		return newChat;
 	}
 
-	public async getChats(userId: string): Promise<ChatDTO[]> {
-		this.logger.log(`Get Chats - userId: ${userId}`);
+	public async getChats(
+		userId: string,
+		query: FindChatsQueryDTO,
+	): Promise<ChatDTO[]> {
+		this.logger.log(
+			`Get Chats - userId: ${userId} - query: ${JSON.stringify(query)}`,
+		);
+
+		const { limit, skip, filters } = query;
 
 		return this.chatRepository.model
 			.find({
+				...filters,
 				users: {
 					$elemMatch: {
 						$eq: new Types.ObjectId(userId),
@@ -69,6 +78,8 @@ export class ChatService implements ChatServiceInterface {
 					path: 'sender',
 				},
 			})
+			.limit(limit)
+			.skip(skip)
 			.sort({ updatedAt: -1 });
 	}
 
@@ -99,5 +110,87 @@ export class ChatService implements ChatServiceInterface {
 			})
 			.populate('sender')
 			.exec();
+	}
+
+	public async updateChatName(
+		userId: string,
+		chatId: string,
+		chatName: string,
+	): Promise<ChatDTO> {
+		this.logger.log(
+			`Update Chat Name - chatId: ${chatId} - userId: ${userId} - chatName: ${chatName}`,
+		);
+
+		const updatedChat = await this.chatRepository.model.findOneAndUpdate(
+			{
+				_id: new Types.ObjectId(chatId),
+				users: {
+					$elemMatch: {
+						$eq: new Types.ObjectId(userId),
+					},
+				},
+			},
+			{
+				chatName,
+			},
+			{
+				new: true,
+			},
+		);
+
+		if (!updatedChat) {
+			throw new BadRequestException('Chat not found');
+		}
+
+		return updatedChat;
+	}
+
+	public async addUsersToChat(
+		userId: string,
+		chatId: string,
+		userIds: string[],
+	): Promise<ChatDTO> {
+		this.logger.log(
+			`Add Users To CHat - userId: ${userId} - chatId: ${chatId} - usersId: ${userIds}}`,
+		);
+
+		const updatedChat = await this.chatRepository.model
+			.findOneAndUpdate(
+				{
+					_id: new Types.ObjectId(chatId),
+					users: {
+						$elemMatch: {
+							$eq: new Types.ObjectId(userId),
+						},
+					},
+				},
+				{
+					isGroupChat: true,
+					$addToSet: {
+						users: {
+							$each: userIds.map((id) => new Types.ObjectId(id)),
+						},
+					},
+				},
+				{
+					new: true,
+				},
+			)
+			.populate({
+				path: 'users',
+				justOne: false,
+			})
+			.populate({
+				path: 'latestMessage',
+				populate: {
+					path: 'sender',
+				},
+			});
+
+		if (!updatedChat) {
+			throw new BadRequestException('Chat not found');
+		}
+
+		return updatedChat;
 	}
 }

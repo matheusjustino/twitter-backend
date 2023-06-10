@@ -13,6 +13,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { PostModule } from './modules/post/post.module';
 import { NotificationModule } from './modules/notification/notification.module';
+import { ChatModule } from './modules/chat/chat.module';
+import { MessageModule } from './modules/message/message.module';
 
 @Module({
 	imports: [
@@ -21,6 +23,8 @@ import { NotificationModule } from './modules/notification/notification.module';
 		SocketIoModule,
 		AuthModule,
 		UserModule,
+		ChatModule,
+		MessageModule,
 		PostModule,
 		NotificationModule,
 	],
