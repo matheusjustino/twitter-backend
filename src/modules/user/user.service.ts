@@ -41,7 +41,7 @@ export class UserService implements UserServiceInterface {
 		}
 
 		query['username'] = {
-			$regex: '.*' + query.username + '.*',
+			$regex: new RegExp('.*' + query.username.toLowerCase() + '.*', 'i'),
 		};
 
 		return this.userRepository.model.find(query).populate('retweets');

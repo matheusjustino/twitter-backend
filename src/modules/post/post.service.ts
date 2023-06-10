@@ -95,7 +95,10 @@ export class PostService implements PostServiceInterface {
 		}
 		if (filters.content) {
 			filters.content = {
-				$regex: '.*' + filters.content + '.*',
+				$regex: new RegExp(
+					'.*' + filters.content.toLowerCase() + '.*',
+					'i',
+				),
 			};
 		}
 
