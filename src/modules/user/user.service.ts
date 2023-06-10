@@ -40,9 +40,14 @@ export class UserService implements UserServiceInterface {
 			delete query.userSearching;
 		}
 
-		query['username'] = {
-			$regex: new RegExp('.*' + query.username.toLowerCase() + '.*', 'i'),
-		};
+		if (query.username) {
+			query['username'] = {
+				$regex: new RegExp(
+					'.*' + query.username.toLowerCase() + '.*',
+					'i',
+				),
+			};
+		}
 
 		return this.userRepository.model.find(query).populate('retweets');
 	}
