@@ -168,17 +168,4 @@ export class UserService implements UserServiceInterface {
 
 		return user[0];
 	}
-
-	// public async getByUsername(username: string): Promise<UserDTO[]> {
-	// 	this.logger.log(`Get By Username - username: ${username}`);
-
-	// 	const users = await this.userRepository.model.find({
-	// 		// _id: {
-	// 		// 	$ne: userId,
-	// 		// },
-	// 		username: { $regex: '.*' + username + '.*' },
-	// 	});
-
-	// 	return users;
-	// }
 }
