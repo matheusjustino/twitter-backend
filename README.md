@@ -13,7 +13,7 @@
 ## Tools and Technologies
 
 This application was developed with **`NestJs`**, **`Typescript`**,
-**`MongoDB Atlas`**, **`JWT Auth`** and **`SocketIO`**.
+**`MongoDB Atlas`**, **`JWT Auth`**, **`SocketIO`** and **`Fly.io`**.
 
 ## Frontend
 
